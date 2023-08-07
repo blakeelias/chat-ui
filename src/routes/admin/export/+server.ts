@@ -164,3 +164,29 @@ export async function POST({ request }) {
 
 	return new Response();
 }
+
+import { LLM_API_URL } from "$lib/config";
+import { error } from "@sveltejs/kit";
+import { z } from "zod";
+import fetch from "node-fetch";
+
+const promptSchema = z.object({
+	model: z.string(),
+	prompt: z.string(),
+});
+
+export async function get({ query }) {
+	try {
+		const { model, prompt } = promptSchema.parse(query);
+		const response = await fetch(LLM_API_URL, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ model, prompt }),
+		});
+		const { tokens } = await response.json();
+		return { body: { tokens } };
+	} catch (e) {
+		return error({ status: 400, message: e.message });
+	}
+}
+
